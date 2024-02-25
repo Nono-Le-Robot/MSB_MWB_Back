@@ -5,22 +5,8 @@ const authRoutes = require("./routes/auth.routes");
 const filesRoutes = require("./routes/files.routes");
 const app = express();
 const cors = require("cors");
-const allowedOrigins = ['https://my-watching-base.sanren.fr', 'https://my-watching-base.sanren.fr:5000', 'https://my-watching-base.sanren.fr:3000', 'https://my-watching-base.sanren.fr:5173', "https://my-watching-base.sanren.fr/login"];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: 'GET,POST,PUT,DELETE',
-  allowedHeaders: 'Content-Type,Authorization',
-  credentials: true
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.raw({ type: "application/octet-stream", limit: "1000mb" }));
