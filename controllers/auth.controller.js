@@ -31,10 +31,10 @@ module.exports.register = async (req, res) => {
 
 module.exports.login = async (req, res) => {
   userModel
-    .findOne({ username: req.body.username })
+    .findOne({ email: req.body.email })
     .then((user) => {
       if (!user) {
-        return res.json({ msg: "User not found", status: false });
+        return res.json({ msg: "Username or password invalid", status: false });
       }
       bcrypt
         .compare(req.body.password, user.password)
