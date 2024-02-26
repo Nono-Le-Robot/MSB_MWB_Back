@@ -64,8 +64,7 @@ module.exports.login = async (req, res) => {
             userId: user._id,
             username: user.username,
             email: user.email,
-            iat: acessToken,
-            password: undefined,
+            iat: acessToken
           });
         })
         .catch((error) => res.status(401).send(error.message));
