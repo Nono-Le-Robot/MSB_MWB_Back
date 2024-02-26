@@ -57,7 +57,8 @@ module.exports.login = async (req, res) => {
           const acessToken = generateAcessToken(user);
           res.status(200).json({
             userId: user._id,
-            username: req.body.username,
+            username: user.username,
+            email: user.email,
             iat: acessToken,
             password: undefined,
           });
