@@ -254,26 +254,17 @@ module.exports.getFiles = (req, res) => {
 };
 
 module.exports.getVideos = async (req, res) => {
-  let mainUsers = JSON.parse(process.env.MAIN_USER_MWB[0])
-
+  let mainUsers = JSON.parse(process.env.MAIN_USER_MWB)
+  
   try {
-    userModel.findById({ _id: mainUsers }).select("-password").then(findFiles => {
-      res.status(200).json({ files: findFiles.files });
-    })
+    let promises = mainUsers.map(user =>  
+      userModel.findById({ _id: user }).select("-password").then(findFiles => findFiles.files)
+    );
+    let combinedData = (await Promise.all(promises)).flat();
+    res.status(200).json({ files: combinedData });
   } catch (err) {
     res.status(400).json({ err: err });
   }
-  
-  // merge account
-  // try {
-  //   let promises = mainUsers.map(user =>  
-  //     userModel.findById({ _id: user }).select("-password").then(findFiles => findFiles.files)
-  //   );
-  //   let combinedData = (await Promise.all(promises)).flat();
-  //   res.status(200).json({ files: combinedData });
-  // } catch (err) {
-  //   res.status(400).json({ err: err });
-  // }
 };
 
 module.exports.removeFiles = (req, res) => {
