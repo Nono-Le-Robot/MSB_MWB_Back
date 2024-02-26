@@ -253,21 +253,18 @@ module.exports.getFiles = (req, res) => {
   }
 };
 
-module.exports.getVideos = (req,res) => {
-  let combinedData = []
-  let mainUsers = process.env.MAIN_USER_MWB
-  mainUsers.forEach(user => {
-    userModel
-      .findById({ _id: user })
-      .select("-password")
-      .then((findFiles) => {
-        combinedData.push(findFiles.files)
-      })
-      .catch((err) => res.status(400).json({ err: err }));
-  });
-  res.status(200).json({ files: combinedData });
-
-}
+module.exports.getVideos = async (req, res) => {
+  let mainUsers = JSON.parse(process.env.MAIN_USER_MWB)
+  try {
+    let promises = mainUsers.map(user =>  
+      userModel.findById({ _id: user }).select("-password").then(findFiles => findFiles.files)
+    );
+    let combinedData = await Promise.all(promises);
+    res.status(200).json({ files: combinedData });
+  } catch (err) {
+    res.status(400).json({ err: err });
+  }
+};
 
 module.exports.removeFiles = (req, res) => {
   const token = req.body.iat;
