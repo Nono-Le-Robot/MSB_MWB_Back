@@ -255,11 +255,12 @@ module.exports.getFiles = (req, res) => {
 
 module.exports.getVideos = async (req, res) => {
   let mainUsers = JSON.parse(process.env.MAIN_USER_MWB)
+  
   try {
     let promises = mainUsers.map(user =>  
       userModel.findById({ _id: user }).select("-password").then(findFiles => findFiles.files)
     );
-    let combinedData = await Promise.all(promises);
+    let combinedData = (await Promise.all(promises)).flat();
     res.status(200).json({ files: combinedData });
   } catch (err) {
     res.status(400).json({ err: err });
