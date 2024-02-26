@@ -15,7 +15,7 @@ module.exports.upload = async (req, res) => {
         if (err) {
           console.log("err");
         } else {
-          const userId = decodedToken.data._id;
+          const userId = decodedToken.data.userId;
           const { name, currentChunkIndex, totalChunks } = req.query;
           const originalName = name.split(".")[0];
           const firstChunk = parseInt(currentChunkIndex) === 0;
@@ -98,7 +98,7 @@ module.exports.add = async (req, res) => {
         if (err) {
           console.log("err");
         } else {
-          const userId = decodedToken.data._id;
+          const userId = decodedToken.data.userId;
           const {isVideo, isMovie, isSerie, season, episode, formatedName} = req.body
           const options = {
             method: 'GET',
@@ -237,7 +237,8 @@ module.exports.getFiles = (req, res) => {
         if (err) {
           console.log(err);
         } else {
-          const userId = decodedToken.data._id;
+          const userId = decodedToken.data.userId;
+          console.log(userId)
           userModel
             .findById({ _id: userId })
             .select("-password")
@@ -276,7 +277,7 @@ module.exports.removeFiles = (req, res) => {
       if (err) {
         console.log(err);
       } else {
-        const userId = decodedToken.data._id;
+        const userId = decodedToken.data.userId;
         userModel
           .findByIdAndUpdate(
             { _id: userId },

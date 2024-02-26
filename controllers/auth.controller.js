@@ -54,11 +54,13 @@ module.exports.login = async (req, res) => {
             );
             // res.cookie("jwt",token,{httpOnly : true,  maxAge: durationTokenLogin})
           }
+
           const userToken = {
             username : user.username,
             email : user.email,
             userId : user._id
           }
+
           const acessToken = generateAcessToken(userToken);
           res.status(200).json({
             userId: user._id,
