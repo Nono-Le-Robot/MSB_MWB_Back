@@ -199,7 +199,7 @@ module.exports.add = async (req, res) => {
           {
             $addToSet: {
               files: {
-                uploadBy: req.body.email,
+                uploadBy: uploadBy,
                 name: req.body.filename,
                 formatedName : formatedName,
                 link: req.body.link,
