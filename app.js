@@ -9,7 +9,7 @@ const cors = require("cors");
 app.use(cors());
 app.use(bodyParser.json({ limit: '500mb' }));
 app.use(bodyParser.urlencoded({ limit: '500mb', extended: true }));
-app.use(bodyParser.raw({ type: "application/octet-stream", limit: "10000mb" }));
+app.use(bodyParser.raw({ type: "application/octet-stream", limit: "1000mb" }));
 
 app.use("/backend/api/auth", authRoutes);
 
