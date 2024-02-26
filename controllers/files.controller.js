@@ -155,9 +155,6 @@ module.exports.add = async (req, res) => {
                 else{
                   return null
                 }
-
-
-
             } catch (err) {
                 console.error(err);
                 return [];
@@ -257,14 +254,19 @@ module.exports.getFiles = (req, res) => {
 };
 
 module.exports.getVideos = (req,res) => {
-  const userId = `${process.env.MAIN_USER_MWB}`;
-          userModel
-            .findById({ _id: userId })
-            .select("-password")
-            .then((findFiles) => {
-              res.status(200).json({ files: findFiles.files });
-            })
-            .catch((err) => res.status(400).json({ err: err }));
+  let combinedData = []
+  let mainUsers = process.env.MAIN_USER_MWB
+  mainUsers.forEach(user => {
+    userModel
+      .findById({ _id: user })
+      .select("-password")
+      .then((findFiles) => {
+        combinedData.push(findFiles.files)
+      })
+      .catch((err) => res.status(400).json({ err: err }));
+  });
+  res.status(200).json({ files: combinedData });
+
 }
 
 module.exports.removeFiles = (req, res) => {
