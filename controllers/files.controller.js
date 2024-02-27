@@ -16,21 +16,12 @@ module.exports.upload = async (req, res) => {
           console.log("err");
         } else {
           const userId = decodedToken.data.userId;
-          const { name, currentChunkIndex, totalChunks } = req.query;
-          const originalName = name.split(".")[0];
+          const { uuid, name, currentChunkIndex, totalChunks } = req.query; // ok
           const firstChunk = parseInt(currentChunkIndex) === 0;
-          const lastChunk =
-            parseInt(currentChunkIndex) === parseInt(totalChunks) - 1;
-          const ext = name.split(".").pop();
+          const lastChunk = parseInt(currentChunkIndex) === parseInt(totalChunks) - 1;
           const data = req.body.toString().split(",")[1];
           const buffer = new Buffer.from(data, "base64");
-          const dateToString = Date.now().toString();
-          const tmpFilename =
-            "tmp_" +
-            dateToString.substr(0, 4) +
-            originalName.replace(" ", "_") +
-            "." +
-            ext;
+          const tmpFilename = "tmp_" + uuid + '_' + name
           fs.access(`files/${userId}`, function (notFound) {
             if (notFound) {
               fs.mkdirSync(`files/${userId}`);
@@ -40,41 +31,18 @@ module.exports.upload = async (req, res) => {
             if (
               firstChunk &&
               fs.existsSync(`./files/${userId}/` + tmpFilename)
-            ) {
-              fs.unlinkSync(`./files/${userId}/` + tmpFilename);
-            }
-            fs.appendFileSync(`./files/${userId}/` + tmpFilename, buffer);
-            if (lastChunk) {
-              const finalFilename =
-                Date.now() + "_" + originalName.replace(" ", "_") + "." + ext;
+              ) {
+                fs.unlinkSync(`./files/${userId}/` + tmpFilename);
+              }
+              fs.appendFileSync(`./files/${userId}/` + tmpFilename, buffer);
+              if (lastChunk) {
+                const finalFilename =
+                Date.now() + "_" + name;
               fs.renameSync(
                 `./files/${userId}/` + tmpFilename,
                 `./files/${userId}/` + finalFilename
               );
-
-              if (
-                ext === "png" ||
-                ext === "jpg" ||
-                ext === "jpeg" ||
-                ext === "gif"
-              ) {
-                fs.access(`files/${userId}/prev`, function (notFound) {
-                  if (notFound) {
-                    fs.mkdirSync(`files/${userId}/prev`);
-                  }
-                });
-
-                let outputPrevImage = `./files/${userId}/prev/${finalFilename}`;
-                sharp(`./files/${userId}/${finalFilename}`)
-                  .resize({ height: 600, width: 800 })
-                  .toFile(outputPrevImage)
-                  .then(function (newFileInfo) {
-                    res.json({ finalFilename });
-                  })
-                  .catch((err) => console.log(err));
-              } else {
-                res.json({ finalFilename });
-              }
+              res.json({ finalFilename });
             } else {
               res.json("ok");
             }
@@ -99,7 +67,7 @@ module.exports.add = async (req, res) => {
           console.log("err");
         } else {
           const userId = decodedToken.data.userId;
-          const {isVideo, isMovie, isSerie, season, episode, formatedName} = req.body
+          const {displayName, isVideo, isMovie, isSerie, season, episode, formatedName} = req.body
           const options = {
             method: 'GET',
             headers: {
@@ -111,22 +79,28 @@ module.exports.add = async (req, res) => {
             try {
                 const response = await fetch(`https://api.themoviedb.org/3/search/tv?query=${serieSearch}&include_adult=true&language=fr-FR&page=1`, options);
                 const data = await response.json();
-                const serieId = data.results[0].id;
-                const serieName = data.results[0].name;
-                const imageResponse = await fetch(`https://api.themoviedb.org/3/tv/${serieId}/images`, options);
-                const imageData = await imageResponse.json();
-                const serieImage = `https://image.tmdb.org/t/p/w500/${imageData.posters[0].file_path}`;
-                const seasonResponse = await fetch(`https://api.themoviedb.org/3/tv/${serieId}/season/${Number(seasonNumber)}?language=fr-FR`, options);
-                const seasonData = await seasonResponse.json();
-                const episodesData = seasonData.episodes.map(episode => ({
-                    serieName: serieName,
-                    image:serieImage,
-                    seasonNumber: seasonData.episodes[0].season_number,
-                    episodeNumber: episode.episode_number,
-                    episodeName: episode.name,
-                    episodeDescription: episode.overview,
-                }));
-                return episodesData;
+                console.log(data.results)
+                if(data.results.length > 0){
+                  const serieId = data.results[0].id;
+                  const serieName = data.results[0].name;
+                  const imageResponse = await fetch(`https://api.themoviedb.org/3/tv/${serieId}/images`, options);
+                  const imageData = await imageResponse.json();
+                  const serieImage = `https://image.tmdb.org/t/p/w500/${imageData.posters[0].file_path}`;
+                  const seasonResponse = await fetch(`https://api.themoviedb.org/3/tv/${serieId}/season/${Number(seasonNumber)}?language=fr-FR`, options);
+                  const seasonData = await seasonResponse.json();
+                  const episodesData = seasonData.episodes.map(episode => ({
+                      displayName: serieName,
+                      image:serieImage,
+                      seasonNumber: seasonData.episodes[0].season_number,
+                      episodeNumber: episode.episode_number,
+                      episodeName: episode.name,
+                      episodeDescription: episode.overview,
+                  }));
+                  return episodesData;
+                }
+                else{
+                  return null
+                }
             } catch (err) {
                 console.error(err);
                 return [];
@@ -137,7 +111,6 @@ module.exports.add = async (req, res) => {
             try {
                 const response = await fetch(`https://api.themoviedb.org/3/search/movie?query=${movieSearch}&include_adult=true&language=fr-FR&page=1`, options);
                 const data = await response.json();
-                console.log('resultat', data.results.length);
                 if(data.results.length > 0){
                   const movieId = data.results[0].id;
                   const movieName = data.results[0].original_title
@@ -146,7 +119,7 @@ module.exports.add = async (req, res) => {
                   const imageData = await imageResponse.json();
                   const movieImage = `https://image.tmdb.org/t/p/w500/${imageData.posters[0].file_path}`;
                   const movieData = {
-                    movieName : movieName,
+                    displayName : movieName,
                     movieDescription : movieDescription,
                     image : movieImage
                   }
@@ -162,34 +135,41 @@ module.exports.add = async (req, res) => {
         };
         let conditionalDataSerie = {}
         let conditionalDataMovie = {}
+        let defaultName = formatedName
+        const words = defaultName.split(" ");
+        for (let i =  0; i < words.length; i++) {
+            words[i] = words[i][0].toUpperCase() + words[i].substring(1);
+        }
+
+        defaultName = words.join(" ");
+
+
         if(isSerie){
           const TMDB = await getSerieInfo(formatedName, season)
-          const episodeData = TMDB.filter(p => p.episodeNumber === Number(episode))
-          conditionalDataSerie = {
+          console.log(formatedName)
+          if(TMDB){
+            const episodeData = TMDB.filter(p => p.episodeNumber === Number(episode))
+            conditionalDataSerie = {
             isSerie: isSerie,
             isMovie: isMovie,
             season: season,
             episode: episode,
-            serieName : episodeData[0].serieName,
+            displayName : episodeData[0].displayName,
             episodeNameTMDB : episodeData[0].episodeName,
             descriptionTMDB : episodeData[0].episodeDescription,
             ImageTMDB : episodeData[0].image
           };
         }
+        }
         else if(isMovie){
           const TMDB = await getMovieInfo(formatedName)
-          let phraseCapitalisee = formatedName.replace(/-/g, ' ');
-          const mots = phraseCapitalisee.split(" ");
-          const motsCapitalises = mots.map(mot => mot.charAt(0).toUpperCase() + mot.slice(1).toLowerCase());
-          const formatedMovieName = motsCapitalises.join(" ");
           if(TMDB){
             conditionalDataMovie = {
+              displayName:TMDB[0].displayName,
               isSerie: isSerie,
               isMovie: isMovie,
-              movieName : formatedName,
               descriptionTMDB : TMDB[0].movieDescription,
-              ImageTMDB : TMDB[0].image,
-              formatedMovieName : formatedMovieName
+              ImageTMDB : TMDB[0].image
             };
           }
         }
@@ -202,6 +182,7 @@ module.exports.add = async (req, res) => {
                 uploadBy: req.body.email,
                 name: req.body.filename,
                 formatedName : formatedName,
+                displayName : defaultName.replace(/-/g, " "),
                 link: req.body.link,
                 prev: req.body.prev,
                 size: req.body.size,
@@ -238,7 +219,6 @@ module.exports.getFiles = (req, res) => {
           console.log(err);
         } else {
           const userId = decodedToken.data.userId;
-          console.log(userId)
           userModel
             .findById({ _id: userId })
             .select("-password")

@@ -19,6 +19,7 @@
     "node-fetch": "^3.3.2",
     "node-fetch-commonjs": "^3.3.2",
     "nodemon": "^2.0.20",
-    "sharp": "^0.31.2"
+    "sharp": "^0.31.2",
+    "uuid": "^9.0.1"
   }
 }
