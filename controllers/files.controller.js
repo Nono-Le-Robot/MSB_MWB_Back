@@ -208,6 +208,77 @@ module.exports.add = async (req, res) => {
   }
 };
 
+
+
+
+
+
+module.exports.postDataVideo = async (req, res) => {
+  const token = req.body.token;
+  const watched = req.body.watched;
+  const videoName = req.body.videoName; // Assurez-vous que le nom de la vidéo est envoyé dans la requête
+ 
+  if (token) {
+     jwt.verify(
+       token,
+       `${process.env.ACCESS_TOKEN_SECRET}`,
+       async (err, decodedToken) => {
+         if (err) {
+           console.log("err");
+         } else {
+           const userId = decodedToken.data.userId;
+           let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
+ 
+           // Trouver la vidéo par le nom
+           const video = await userModel.findOne({
+             _id: mainUsers[0],
+             'files.name': videoName, // Utilisez le nom de la vidéo pour la recherche
+           });
+ 
+           if (video) {
+             // Ajouter l'ID de l'utilisateur à watchedBy de la vidéo
+             video.files.forEach(file => {
+               if (file.name === videoName) {
+                if(watched){
+                  file.watchedBy.push(userId);
+                }
+                else{
+                  file.watchedBy = file.watchedBy.filter(id => id !== userId);
+                }
+               }
+             });
+ 
+             // Mettre à jour la vidéo avec la nouvelle information
+             const updatedVideo = await userModel.findByIdAndUpdate(
+               { _id: mainUsers[0] },
+               video,
+               { new: true }
+             );
+ 
+             // Gérer la réponse
+             if (updatedVideo) {
+               res.json({ message: "Video watched successfully", video: updatedVideo });
+             } else {
+               res.status(404).send("Video not found");
+             }
+           } else {
+             res.status(404).send("Video not found");
+           }
+         }
+       }
+     );
+  } else {
+     res.status(404).send("no token");
+  }
+ };
+ 
+
+
+
+
+
+
+
 module.exports.getFiles = (req, res) => {
   const token = req.body.token;
   if (token) {
