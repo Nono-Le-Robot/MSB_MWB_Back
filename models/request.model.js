@@ -10,6 +10,13 @@ const requestSchema = new mongoose.Schema({
   info: {
     type: String,
   },
+  processed: {
+    type: Boolean,
+    default: false,
+  },
+  by: {
+    type: string,
+  },
 });
 
 module.exports = mongoose.model("Request", requestSchema);
