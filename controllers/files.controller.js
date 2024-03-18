@@ -242,7 +242,7 @@ module.exports.postDataVideo = async (req, res) => {
       `${process.env.ACCESS_TOKEN_SECRET}`,
       async (err, decodedToken) => {
         if (err) {
-          console.log("err");
+          res.status("400", err);
         } else {
           const userId = decodedToken.data.userId;
           let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
@@ -279,10 +279,10 @@ module.exports.postDataVideo = async (req, res) => {
                 video: updatedVideo,
               });
             } else {
-              res.status(404).send("Video not found");
+              res.status(404).send("Video not found 1");
             }
           } else {
-            res.status(404).send("Video not found");
+            res.status(404).send("Video not found 2");
           }
         }
       }
