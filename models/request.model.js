@@ -15,7 +15,7 @@ const requestSchema = new mongoose.Schema({
     default: false,
   },
   by: {
-    type: string,
+    type: String,
   },
 });
 
