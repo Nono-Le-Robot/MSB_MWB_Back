@@ -246,18 +246,18 @@ module.exports.postDataVideo = async (req, res) => {
         } else {
           const userId = decodedToken.data.userId;
           let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
-          let video = undefined;
+          let video = [];
           // Trouver la vidéo par le nom
 
           mainUsers.forEach(async (user) => {
-            const fetchVideo = await userModel.findOne({
+            const fetchedVideo = await userModel.findOne({
               _id: user,
               "files.name": videoName, // Utilisez le nom de la vidéo pour la recherche
             });
-
-            if (fetchVideo) video = fetchVideo;
-            else return res.status("404", "video not found on mainUsers array");
+            video.push(fetchedVideo);
           });
+
+          video.flat(Infinity);
 
           if (video) {
             // Ajouter l'ID de l'utilisateur à watchedBy de la vidéo
