@@ -234,7 +234,7 @@ module.exports.add = async (req, res) => {
 module.exports.postDataVideo = async (req, res) => {
   const token = req.body.token;
   const watched = req.body.watched;
-  const videoName = req.body.videoName; // Assurez-vous que le nom de la vidéo est envoyé dans la requête
+  const videoName = req.body.videoName;
 
   if (token) {
     jwt.verify(
@@ -242,53 +242,46 @@ module.exports.postDataVideo = async (req, res) => {
       `${process.env.ACCESS_TOKEN_SECRET}`,
       async (err, decodedToken) => {
         if (err) {
-          res.status("400", err);
+          console.log("err");
+          return res.status(401).send("Unauthorized");
         } else {
           const userId = decodedToken.data.userId;
           let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
-          let video = [];
-          // Trouver la vidéo par le nom
 
-          mainUsers.forEach(async (user) => {
-            const fetchedVideo = await userModel.findOne({
-              _id: user,
-              "files.name": videoName, // Utilisez le nom de la vidéo pour la recherche
-            });
-            video.push(fetchedVideo);
-          });
+          try {
+            await Promise.all(
+              mainUsers.map(async (user) => {
+                const video = await userModel.findOne({
+                  _id: user,
+                  "files.name": videoName,
+                });
 
-          video.flat(Infinity);
+                if (video) {
+                  video.files.forEach((file) => {
+                    if (file.name === videoName) {
+                      if (watched) {
+                        file.watchedBy.push(userId);
+                      } else {
+                        file.watchedBy = file.watchedBy.filter(
+                          (id) => id !== userId
+                        );
+                      }
+                    }
+                  });
 
-          if (video) {
-            // Ajouter l'ID de l'utilisateur à watchedBy de la vidéo
-            video.files.forEach((file) => {
-              if (file.name === videoName) {
-                if (watched) {
-                  file.watchedBy.push(userId);
-                } else {
-                  file.watchedBy = file.watchedBy.filter((id) => id !== userId);
+                  await userModel.findByIdAndUpdate({ _id: user }, video, {
+                    new: true,
+                  });
                 }
-              }
-            });
-
-            // Mettre à jour la vidéo avec la nouvelle information
-            const updatedVideo = await userModel.findByIdAndUpdate(
-              { _id: mainUsers[0] },
-              video,
-              { new: true }
+              })
             );
 
-            // Gérer la réponse
-            if (updatedVideo) {
-              res.json({
-                message: "Video watched successfully",
-                video: updatedVideo,
-              });
-            } else {
-              res.status(404).send("Video not found 1");
-            }
-          } else {
-            res.status(404).send("Video not found 2");
+            res.json({
+              message: "Video watched successfully",
+            });
+          } catch (error) {
+            console.error(error);
+            res.status(500).send("Server error");
           }
         }
       }
