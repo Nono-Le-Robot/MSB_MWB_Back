@@ -410,7 +410,6 @@ module.exports.requestNewMovieOrSerie = async (req, res) => {
 };
 
 module.exports.getRequestQueue = async (req, res) => {
-  // res.json("okokokokok");
   try {
     await requestModel.find({}).then((requests) => {
       res.status(200).json(requests.filter((p) => p.name !== "MovieName"));
@@ -477,6 +476,36 @@ module.exports.updateList = async (req, res) => {
       }
     });
     res.status(200).json("updated");
+  } catch (err) {
+    res.status(400).json({ err: err });
+  }
+};
+
+module.exports.changeName = async (req, res) => {
+  const { prevName, newName } = req.body;
+  console.log(prevName, newName);
+  let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
+
+  try {
+    // Utilisez Promise.all pour attendre que toutes les promesses soient résolues
+    await Promise.all(
+      mainUsers.map(async (user) => {
+        const userDoc = await userModel.findById(user).select("-password");
+
+        const filesToUpdate = userDoc.files.filter(
+          (file) => file.displayName === prevName
+        );
+        filesToUpdate.forEach((file) => {
+          file.displayName = newName;
+          console.log(file.displayName);
+        });
+        userDoc.markModified("files");
+        await userDoc.save();
+        console.log(userDoc);
+      })
+    );
+
+    res.json({ msg: "Noms mis à jour avec succès" });
   } catch (err) {
     res.status(400).json({ err: err });
   }

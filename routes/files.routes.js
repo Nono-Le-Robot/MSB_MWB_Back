@@ -10,5 +10,6 @@ router.post("/post-data-video", filesController.postDataVideo);
 router.post("/request-new", filesController.requestNewMovieOrSerie);
 router.get("/request-queue", filesController.getRequestQueue);
 router.get("/update-list", filesController.updateList);
+router.post("/change-name", filesController.changeName);
 
 module.exports = router;
