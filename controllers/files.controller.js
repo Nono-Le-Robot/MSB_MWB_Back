@@ -5,6 +5,7 @@ const requestModel = require("../models/request.model");
 const jwt = require("jsonwebtoken");
 const sharp = require("sharp");
 const fetch = require("node-fetch-commonjs");
+const movieModel = require("../models/movie.model");
 
 module.exports.upload = async (req, res) => {
   const token = req.query.uploadBy;
@@ -379,12 +380,25 @@ module.exports.removeFiles = (req, res) => {
 };
 
 module.exports.requestNewMovieOrSerie = async (req, res) => {
-  const { name, year, info } = req.body;
-  console.log(req.body);
+  const { name, year, info, token } = req.body;
+  let user = null;
+  jwt.verify(
+    token,
+    `${process.env.ACCESS_TOKEN_SECRET}`,
+    (err, decodedToken) => {
+      if (err) {
+        console.log(err);
+        res.status(404).json("user not found");
+      } else {
+        user = decodedToken.data;
+      }
+    }
+  );
   const newRequest = await new requestModel({
     name: name,
     year: year,
     info: info,
+    requestedBy: `${user.username} / ${user.email}`,
   });
 
   newRequest
@@ -393,4 +407,77 @@ module.exports.requestNewMovieOrSerie = async (req, res) => {
       res.status(200).json({ msg: "request created", name: name });
     })
     .catch((err) => res.status(400).json({ error: err.message }));
+};
+
+module.exports.getRequestQueue = async (req, res) => {
+  // res.json("okokokokok");
+  try {
+    await requestModel.find({}).then((requests) => {
+      res.status(200).json(requests.filter((p) => p.name !== "MovieName"));
+    });
+  } catch (err) {
+    res.status(400).json({ err: err });
+  }
+};
+
+module.exports.updateList = async (req, res) => {
+  let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
+  try {
+    await movieModel.deleteMany({});
+    let promises = mainUsers.map((user) =>
+      userModel
+        .findById({ _id: user })
+        .select("-password")
+        .then((findFiles) => findFiles.files)
+    );
+    let combinedData = (await Promise.all(promises)).flat();
+
+    // res.status(200).json(combinedData);
+
+    combinedData.forEach(async (video) => {
+      const fixedWatchedBy = [...new Set(video.watchedBy)];
+      if (video.isSerie) {
+        const newRequest = await new movieModel({
+          name: video.displayName,
+          imageTMDB: video.ImageTMDB,
+          season: video.season,
+          episode: video.episode,
+          episodeName: video.episodeNameTMDB,
+          description: video.descriptionTMDB,
+          link: video.link,
+          views: fixedWatchedBy.length,
+          isSerie: true,
+          isMovie: false,
+          size: video.size,
+          watchedBy: fixedWatchedBy,
+          likedBy: video.likedBy,
+        });
+        newRequest
+          .save()
+          .then(() => {})
+          .catch((err) => res.status(400).json({ error: err.message }));
+      } else {
+        const newRequest = await new movieModel({
+          name: video.displayName,
+          imageTMDB: video.ImageTMDB,
+          description: video.descriptionTMDB,
+          link: video.link,
+          views: fixedWatchedBy.length,
+          isSerie: false,
+          isMovie: true,
+          size: video.size,
+          watchedBy: fixedWatchedBy,
+          likedBy: video.likedBy,
+        });
+
+        newRequest
+          .save()
+          .then(() => {})
+          .catch((err) => res.status(400).json({ error: err.message }));
+      }
+    });
+    res.status(200).json("updated");
+  } catch (err) {
+    res.status(400).json({ err: err });
+  }
 };

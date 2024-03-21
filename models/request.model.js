@@ -10,6 +10,10 @@ const requestSchema = new mongoose.Schema({
   info: {
     type: String,
   },
+  requestedBy: {
+    type: String,
+    default: "",
+  },
   processed: {
     type: Boolean,
     default: false,

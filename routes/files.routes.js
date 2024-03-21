@@ -8,5 +8,7 @@ router.post("/remove-files", filesController.removeFiles);
 router.get("/get-main-videos", filesController.getVideos);
 router.post("/post-data-video", filesController.postDataVideo);
 router.post("/request-new", filesController.requestNewMovieOrSerie);
+router.get("/request-queue", filesController.getRequestQueue);
+router.get("/update-list", filesController.updateList);
 
 module.exports = router;
