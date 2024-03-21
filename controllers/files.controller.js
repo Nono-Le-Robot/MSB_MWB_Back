@@ -482,8 +482,8 @@ module.exports.updateList = async (req, res) => {
 };
 
 module.exports.changeName = async (req, res) => {
-  const { prevName, newName } = req.body;
-  console.log(prevName, newName);
+  const { prevName, newName, newImage } = req.body;
+  console.log(prevName, newName, newImage);
   let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
 
   try {
@@ -496,12 +496,11 @@ module.exports.changeName = async (req, res) => {
           (file) => file.displayName === prevName
         );
         filesToUpdate.forEach((file) => {
-          file.displayName = newName;
-          console.log(file.displayName);
+          if (newName !== "") file.displayName = newName;
+          if (newImage !== "") file.ImageTMDB = newImage;
         });
         userDoc.markModified("files");
         await userDoc.save();
-        console.log(userDoc);
       })
     );
 
