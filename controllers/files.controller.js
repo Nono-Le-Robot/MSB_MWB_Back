@@ -482,8 +482,12 @@ module.exports.updateList = async (req, res) => {
 };
 
 module.exports.changeName = async (req, res) => {
-  const { prevName, newName, newImage } = req.body;
-  console.log(prevName, newName, newImage);
+  const { prevName, newName, newImage, genre } = req.body;
+  console.log("prev name", prevName);
+  console.log("new name ", newName);
+  console.log("new image ", newImage);
+  console.log("new genre ", genre);
+
   let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
 
   try {
@@ -498,6 +502,7 @@ module.exports.changeName = async (req, res) => {
         filesToUpdate.forEach((file) => {
           if (newName !== "") file.displayName = newName;
           if (newImage !== "") file.ImageTMDB = newImage;
+          if (genre !== "") file.genre = genre;
         });
         userDoc.markModified("files");
         await userDoc.save();
@@ -506,6 +511,145 @@ module.exports.changeName = async (req, res) => {
 
     res.json({ msg: "Noms mis à jour avec succès" });
   } catch (err) {
+    res.status(400).json({ err: err });
+  }
+};
+
+module.exports.addMovieStyle = async (req, res) => {
+  const options = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      Authorization: `Bearer ${process.env.TMDB_SECRET}`,
+    },
+  };
+
+  const movies = [
+    { id: 28, genre: "Action" },
+    { id: 12, genre: "Adventure" },
+    { id: 16, genre: "Animation" },
+    { id: 35, genre: "Comedy" },
+    { id: 80, genre: "Crime" },
+    { id: 99, genre: "Documentary" },
+    { id: 18, genre: "Drama" },
+    { id: 10751, genre: "Family" },
+    { id: 14, genre: "Fantasy" },
+    { id: 36, genre: "History" },
+    { id: 27, genre: "Horror" },
+    { id: 10402, genre: "Music" },
+    { id: 9648, genre: "Mystery" },
+    { id: 10749, genre: "Romance" },
+    { id: 878, genre: "Science Fiction" },
+    { id: 10770, genre: "TV Movie" },
+    { id: 53, genre: "Thriller" },
+    { id: 10752, genre: "War" },
+    { id: 37, genre: "Western" },
+  ];
+
+  const tvShows = [
+    { id: 10759, genre: "Action & Adventure" },
+    { id: 16, genre: "Animation" },
+    { id: 35, genre: "Comedy" },
+    { id: 80, genre: "Crime" },
+    { id: 99, genre: "Documentary" },
+    { id: 18, genre: "Drama" },
+    { id: 10751, genre: "Family" },
+    { id: 10762, genre: "Kids" },
+    { id: 9648, genre: "Mystery" },
+    { id: 10763, genre: "News" },
+    { id: 10764, genre: "Reality" },
+    { id: 10765, genre: "Sci-Fi & Fantasy" },
+    { id: 10766, genre: "Soap" },
+    { id: 10767, genre: "Talk" },
+    { id: 10768, genre: "War & Politics" },
+    { id: 37, genre: "Western" },
+  ];
+
+  function getGenreByID(id, type) {
+    const genreList = type === "movie" ? movies : tvShows;
+    const genreObj = genreList.find((genre) => genre.id === id);
+    return genreObj ? `${genreObj.genre}` : "unknown";
+  }
+  let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
+
+  try {
+    let genre = "";
+    await Promise.all(
+      mainUsers.map(async (user) => {
+        console.log(user);
+        let userDoc = await userModel.findById(user).select("-password");
+        const files = userDoc.files;
+        files.forEach(async (file) => {
+          if (file.isMovie) {
+            const movieSearch = file.formatedName;
+            try {
+              const response = await fetch(
+                `https://api.themoviedb.org/3/search/movie?query=${movieSearch}&include_adult=true&language=fr-FR&page=1`,
+                options
+              );
+              const data = await response.json();
+              console.log(
+                "==========================================" +
+                  movieSearch +
+                  "========================================="
+              );
+              const genres = data.results[0].genre_ids;
+              if (genres) {
+                console.log(genres);
+                let result = "";
+                genres.map((genre, index) => {
+                  index < genres.length - 1
+                    ? (result += getGenreByID(genre, "movie") + " / ")
+                    : (result += getGenreByID(genre, "movie"));
+                });
+                genre = result;
+              }
+            } catch (err) {
+              console.error(err);
+              return [];
+            }
+          }
+
+          if (file.isSerie) {
+            try {
+              const serieSearch = file.formatedName;
+              const response = await fetch(
+                `https://api.themoviedb.org/3/search/tv?query=${serieSearch}&include_adult=true&language=fr-FR&page=1`,
+                options
+              );
+              const data = await response.json();
+              console.log(
+                "==========================================" +
+                  serieSearch +
+                  "========================================="
+              );
+              const genres = data.results[0].genre_ids;
+              if (genres) {
+                console.log(genres);
+
+                let result = "";
+                genres.map((genre, index) => {
+                  index < genres.length - 1
+                    ? (result += getGenreByID(genre, "serie") + " / ")
+                    : (result += getGenreByID(genre, "serie"));
+                });
+                genre = result;
+              }
+            } catch (err) {
+              console.error(err);
+              return [];
+            }
+          }
+
+          file.genre = genre;
+        });
+        userDoc.markModified("files");
+        await userDoc.save();
+      })
+    );
+    res.json("success");
+  } catch (err) {
+    console.log("ahah" + err);
     res.status(400).json({ err: err });
   }
 };
