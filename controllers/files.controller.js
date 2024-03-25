@@ -482,11 +482,11 @@ module.exports.updateList = async (req, res) => {
 };
 
 module.exports.changeName = async (req, res) => {
-  const { prevName, newName, newImage, genre } = req.body;
+  const { prevName, newName, newImage, gender } = req.body;
   console.log("prev name", prevName);
   console.log("new name ", newName);
   console.log("new image ", newImage);
-  console.log("new genre ", genre);
+  console.log("new gender ", gender);
 
   let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
 
@@ -502,7 +502,7 @@ module.exports.changeName = async (req, res) => {
         filesToUpdate.forEach((file) => {
           if (newName !== "") file.displayName = newName;
           if (newImage !== "") file.ImageTMDB = newImage;
-          if (genre !== "") file.genre = genre;
+          if (gender !== "") file.gender = gender;
         });
         userDoc.markModified("files");
         await userDoc.save();
@@ -573,7 +573,7 @@ module.exports.addMovieStyle = async (req, res) => {
   let mainUsers = JSON.parse(process.env.MAIN_USER_MWB);
 
   try {
-    let genre = "";
+    let gender = "";
     await Promise.all(
       mainUsers.map(async (user) => {
         console.log(user);
@@ -602,7 +602,7 @@ module.exports.addMovieStyle = async (req, res) => {
                     ? (result += getGenreByID(genre, "movie") + " / ")
                     : (result += getGenreByID(genre, "movie"));
                 });
-                genre = result;
+                gender = result;
               }
             } catch (err) {
               console.error(err);
@@ -633,7 +633,7 @@ module.exports.addMovieStyle = async (req, res) => {
                     ? (result += getGenreByID(genre, "serie") + " / ")
                     : (result += getGenreByID(genre, "serie"));
                 });
-                genre = result;
+                gender = result;
               }
             } catch (err) {
               console.error(err);
@@ -641,7 +641,7 @@ module.exports.addMovieStyle = async (req, res) => {
             }
           }
 
-          file.genre = genre;
+          file.gender = gender;
         });
         userDoc.markModified("files");
         await userDoc.save();
