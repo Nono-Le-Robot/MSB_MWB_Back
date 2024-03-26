@@ -588,11 +588,6 @@ module.exports.addMovieStyle = async (req, res) => {
                 options
               );
               const data = await response.json();
-              console.log(
-                "==========================================" +
-                  movieSearch +
-                  "========================================="
-              );
               const genres = data.results[0].genre_ids;
               if (genres) {
                 console.log(genres);
@@ -618,11 +613,6 @@ module.exports.addMovieStyle = async (req, res) => {
                 options
               );
               const data = await response.json();
-              console.log(
-                "==========================================" +
-                  serieSearch +
-                  "========================================="
-              );
               const genres = data.results[0].genre_ids;
               if (genres) {
                 console.log(genres);
